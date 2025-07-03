@@ -1,7 +1,7 @@
 ﻿#include <Windows.h>
 #include <windows.h>
-#include <oleauto.h>  // Для работы с BSTR и SysAllocString
-#include <stdio.h>   // Для sprintf (если нужно форматирование)
+#include <oleauto.h>  
+#include <stdio.h>   
 
 
 
