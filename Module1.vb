@@ -7,9 +7,6 @@ Declare PtrSafe Function coolSub Lib "C:\1\Dll1.dll" _
      ByVal rows As Long, _
      ByVal cols As Long) As String
      
-Declare PtrSafe Function add_two Lib "C:\1\Dll1.dll" _
-     (ByVal rows As Long, _
-      ByVal cols As Long) As Long
      
 Sub mainSub()
     Call subjectsSub
@@ -97,10 +94,7 @@ Sub cool2Sub()
     
     bestStudent = coolSub(marksArray(1, 1), VarPtr(namesArray(1)), UBound(namesArray), 6)
     Range("A12").Value = "Лучший:" & bestStudent
-    
-    Dim k As Long
-    k = add_two(2, 3)
-    Range("B12").Value = k
+
 
 End Sub
 
