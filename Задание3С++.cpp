@@ -1,18 +1,18 @@
 #include <Windows.h> 
-#include <string> //подключение объекта строк
-#include "Class.h" //подключение заголовочного файла, где объявлены классы Student и University
-#include <fstream> //подключение файлов
+#include <string> //РїРѕРґРєР»СЋС‡РµРЅРёРµ РѕР±СЉРµРєС‚Р° СЃС‚СЂРѕРє
+#include "Class.h" //РїРѕРґРєР»СЋС‡РµРЅРёРµ Р·Р°РіРѕР»РѕРІРѕС‡РЅРѕРіРѕ С„Р°Р№Р»Р°, РіРґРµ РѕР±СЉСЏРІР»РµРЅС‹ РєР»Р°СЃСЃС‹ Student Рё University
+#include <fstream> //РїРѕРґРєР»СЋС‡РµРЅРёРµ С„Р°Р№Р»РѕРІ
 #include <iostream>
-#include <vector> //подключение контейнера vector
+#include <vector> //РїРѕРґРєР»СЋС‡РµРЅРёРµ РєРѕРЅС‚РµР№РЅРµСЂР° vector
 
 using namespace std;
-//тело конструктора класса Student
+//С‚РµР»Рѕ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂР° РєР»Р°СЃСЃР° Student
 Student::Student(int name, double* marks, int count) {
     Name = name;
     Marks = marks;
     Count = count;
 }
-//тело функции среднего балла класса Student
+//С‚РµР»Рѕ С„СѓРЅРєС†РёРё СЃСЂРµРґРЅРµРіРѕ Р±Р°Р»Р»Р° РєР»Р°СЃСЃР° Student
 double Student::sredBall() {
     double summa = 0.0;
     for (int i = 0; i < Count; i++) {
@@ -20,11 +20,11 @@ double Student::sredBall() {
     }
     return summa / Count;
 }
-//тело функции индекса студента класса Student
+//С‚РµР»Рѕ С„СѓРЅРєС†РёРё РёРЅРґРµРєСЃР° СЃС‚СѓРґРµРЅС‚Р° РєР»Р°СЃСЃР° Student
 int Student::nameSt() {
     return Name;
 }
-//тело функции наличия двойки у студента класса Student
+//С‚РµР»Рѕ С„СѓРЅРєС†РёРё РЅР°Р»РёС‡РёСЏ РґРІРѕР№РєРё Сѓ СЃС‚СѓРґРµРЅС‚Р° РєР»Р°СЃСЃР° Student
 bool Student::dva() {
     for (int i = 0; i < Count; i++) {
         if (Marks[i] == 2.0) {
@@ -33,7 +33,7 @@ bool Student::dva() {
     }
     return false;
 }
-//тело функции стипендии
+//С‚РµР»Рѕ С„СѓРЅРєС†РёРё СЃС‚РёРїРµРЅРґРёРё
 long Student::stipend() {
 
 
@@ -53,30 +53,30 @@ long Student::stipend() {
         return 4000;
     }
 }
-//тело процедуры добавления студента класса University
+//С‚РµР»Рѕ РїСЂРѕС†РµРґСѓСЂС‹ РґРѕР±Р°РІР»РµРЅРёСЏ СЃС‚СѓРґРµРЅС‚Р° РєР»Р°СЃСЃР° University
 void University::addStudent(Student& student) {
     students.push_back(student);
 }
-//функция для записи полей в файл
+//С„СѓРЅРєС†РёСЏ РґР»СЏ Р·Р°РїРёСЃРё РїРѕР»РµР№ РІ С„Р°Р№Р»
 static void writeHeader(std::ofstream& f) {
     f << "Index\tAvg\tStipend\n";
 }
-//тело процедуры анализа студента класса University
+//С‚РµР»Рѕ РїСЂРѕС†РµРґСѓСЂС‹ Р°РЅР°Р»РёР·Р° СЃС‚СѓРґРµРЅС‚Р° РєР»Р°СЃСЃР° University
 void University::processStudent() {
-    //создание фалов(их путей, хранения)
+    //СЃРѕР·РґР°РЅРёРµ С„Р°Р»РѕРІ(РёС… РїСѓС‚РµР№, С…СЂР°РЅРµРЅРёСЏ)
     ofstream fTheBest("C:\\1\\TheBest.txt");
     ofstream fgood("C:\\1\\good.txt");
     ofstream fmiddle("C:\\1\\middle.txt");
     ofstream fTheWorst("C:\\1\\TheWorst.txt");
 
-    //создание файлов(их полей)
+    //СЃРѕР·РґР°РЅРёРµ С„Р°Р№Р»РѕРІ(РёС… РїРѕР»РµР№)
     writeHeader(fTheBest);
     writeHeader(fgood);
     writeHeader(fmiddle);
     writeHeader(fTheWorst);
 
 
-    //цикл записи в файлы и добавление в контейнер студентов
+    //С†РёРєР» Р·Р°РїРёСЃРё РІ С„Р°Р№Р»С‹ Рё РґРѕР±Р°РІР»РµРЅРёРµ РІ РєРѕРЅС‚РµР№РЅРµСЂ СЃС‚СѓРґРµРЅС‚РѕРІ
     for (Student& student : students) {
         double avg = student.sredBall();
         bool hastwo = student.dva();
@@ -100,29 +100,29 @@ void University::processStudent() {
         }
     }
 
-    //закрытие файлов
+    //Р·Р°РєСЂС‹С‚РёРµ С„Р°Р№Р»РѕРІ
     fTheBest.close();
     fgood.close();
     fmiddle.close();
     fTheWorst.close();
 
 }
-//основная функция Dll
+//РѕСЃРЅРѕРІРЅР°СЏ С„СѓРЅРєС†РёСЏ Dll
 extern "C" __declspec(dllexport)
 int __stdcall GetBestStudent(double* marks, int rows, int cols, int* TheBestCount)
 {
-    University u; //создание объекта класса University
+    University u; //СЃРѕР·РґР°РЅРёРµ РѕР±СЉРµРєС‚Р° РєР»Р°СЃСЃР° University
 
-    //создание объекта класса Student 
+    //СЃРѕР·РґР°РЅРёРµ РѕР±СЉРµРєС‚Р° РєР»Р°СЃСЃР° Student 
     for (int i = 0; i < rows; ++i) {
         Student student(i, &marks[i * cols], cols);
         u.addStudent(student);
     }
 
-    u.processStudent(); //вызов функции анализа
+    u.processStudent(); //РІС‹Р·РѕРІ С„СѓРЅРєС†РёРё Р°РЅР°Р»РёР·Р°
 
     *TheBestCount = static_cast<int>(u.TheBest.size());
-    //лямбда функция для поиска наилучшего студента по категориям 
+    //Р»СЏРјР±РґР° С„СѓРЅРєС†РёСЏ РґР»СЏ РїРѕРёСЃРєР° РЅР°РёР»СѓС‡С€РµРіРѕ СЃС‚СѓРґРµРЅС‚Р° РїРѕ РєР°С‚РµРіРѕСЂРёСЏРј 
     auto find_best = [&](const std::vector<Student*>& grp) {
         double bestA = -1.0;
         int bestI = -1;
