@@ -3,7 +3,7 @@
 
 using namespace std;
 
-//класс Студент:
+//РєР»Р°СЃСЃ РЎС‚СѓРґРµРЅС‚:
 class Student {
 private:
     double* Marks;
@@ -22,7 +22,7 @@ public:
     long stipend();
 };
 
-//Класс универа
+//РљР»Р°СЃСЃ СѓРЅРёРІРµСЂР°
 class University {
 private:
     vector<Student> students;
