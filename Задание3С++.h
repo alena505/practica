@@ -1,37 +1,46 @@
 #pragma once
 #include <vector>
+#include <string>
 
 using namespace std;
 
 //класс Студент:
 class Student {
 private:
-    double* Marks;
-    int Count;
-    int Name;
+    vector<double> marks_;
+    int count_;
+    string name_;
 public:
-    Student(int name, double* marks, int count);
+    Student(string name, double* marks, int count);
 
-    double sredBall();
+    double GetAvg();
 
-    int nameSt();
+    string GetNameStudent();
 
-    bool dva();
+    bool GetTwo();
 
 
-    long stipend();
+
+    long Scholarship();
 };
 
 //Класс универа
 class University {
 private:
-    vector<Student> students;
+    vector<Student> students_;
 public:
-    vector<Student*> TheBest;
-    vector<Student*> good;
-    vector<Student*> middle;
-    vector<Student*> TheWorst;
 
-    void addStudent(Student& student);
-    void processStudent();
+    vector<Student*> GetTheBest();
+    vector<Student*> GetGood();
+    vector<Student*> GetMiddle();
+    vector<Student*> GetTheWorst();
+
+    /* vector<Student*> the_best;
+     vector<Student*> good;
+     vector<Student*> middle;
+     vector<Student*> the_worst;*/
+
+    void AddStudent(Student& student);
+    void ProcessStudent();
+    const vector<Student>& GetStudents() const { return students_; }
 };
