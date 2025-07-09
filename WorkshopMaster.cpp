@@ -1,0 +1,27 @@
+﻿#include "PartBatch.h"
+#pragma once
+#include <string>
+#include <vector>
+
+
+
+using namespace std;
+
+class WorkshopMaster {
+private:
+	string name_master_;
+	vector<PartBatch*> details_;
+public:
+	string GetName() const;
+
+	WorkshopMaster(string name_master);
+	~WorkshopMaster();
+	void AddDetails(PartBatch* details);
+
+	string GetNameMaster() {
+		return name_master_;
+	}
+
+	friend class ProductionDepartment;
+
+};
