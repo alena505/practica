@@ -1,27 +1,34 @@
 #include <Windows.h>
 #include <string> //подключение объекта строк
-#include "Class.h" //подключение заголовочного файла, где объявлены классы Student и University
 #include <fstream> //подключение файлов
 #include <iostream>
 #include <vector> //подключение контейнера vector
+#include "Class.h" //подключение заголовочного файла, где объявлены классы Student и University
+#include <iomanip>
 #include <comutil.h>
-
-
-
+#include <cmath>
 
 using namespace std;
 //тело конструктора класса Student
-Student::Student(string name, double* marks, int count) : name_(name), marks_(marks, marks + count), count_(count) {}
-
+Student::Student(string name, double* marks, int count)
+    : name_(name), marks_(marks, marks + count) {}
 
 //тело функции среднего балла класса Student
 double Student::GetAvg() {
-    double summa = 0.0;
+    if (marks_.empty()) return 0.0;
+    double sum = 0.0;
     for (double mark : marks_) {
-        summa += mark;
+        sum += mark;
     }
-    return summa / marks_.size();
+    return sum / marks_.size();
 }
+
+//тело функции округления среднего балла
+double Student::GetAvgRounded() {
+    double avg = GetAvg();
+    return round(avg * 100.0) / 100.0;
+}
+
 //тело функции индекса студента класса Student
 string Student::GetNameStudent() {
     return name_;
@@ -39,14 +46,10 @@ bool Student::GetTwo() {
 
 //тело функции стипендии
 long Student::Scholarship() {
-
-
-    if (Student::GetTwo()) {
+    if (GetTwo()) {
         return 0;
     }
-
-    double avg = Student::GetAvg();
-
+    double avg = GetAvgRounded();
     if (avg >= 4.5) {
         return 10000;
     }
@@ -57,127 +60,141 @@ long Student::Scholarship() {
         return 4000;
     }
 }
+
 //тело процедуры добавления студента класса University
 void University::AddStudent(Student& student) {
     students_.push_back(student);
 }
-//функция для записи полей в файл
-static void WriteHeader(ofstream& f) {
-    f << "Name\tAvg\tScholarship\n";
+
+vector<Student>& University::GetStudents() {
+    return students_;
 }
+
+//тело метода для лучшего студента
 vector<Student*> University::GetTheBest() {
     vector<Student*> result;
     for (Student& student : students_) {
-        if (!student.GetTwo() && student.GetAvg() >= 4.5) {
-            result.push_back(const_cast<Student*>(&student));
+        if (!student.GetTwo() && student.GetAvgRounded() >= 4.5) {
+            result.push_back(&student);
         }
     }
     return result;
 }
+
+//тело метода для хорошего студента
 vector<Student*> University::GetGood() {
     vector<Student*> result;
     for (Student& student : students_) {
-        if (!student.GetTwo() && student.GetAvg() >= 4.0) {
-            result.push_back(const_cast<Student*>(&student));
+        if (!student.GetTwo() && student.GetAvgRounded() >= 4.0 && student.GetAvgRounded() < 4.5) {
+            result.push_back(&student);
         }
     }
     return result;
 }
+
+//тело метода для среднего студента
 vector<Student*> University::GetMiddle() {
     vector<Student*> result;
     for (Student& student : students_) {
-        if (!student.GetTwo() && student.GetAvg() < 4.0) {
-            result.push_back(const_cast<Student*>(&student));
+        if (!student.GetTwo() && student.GetAvgRounded() < 4.0) {
+            result.push_back(&student);
         }
     }
     return result;
 }
+
+//тело метода для худшего студента
 vector<Student*> University::GetTheWorst() {
     vector<Student*> result;
     for (Student& student : students_) {
         if (student.GetTwo()) {
-            result.push_back(const_cast<Student*>(&student));
+            result.push_back(&student);
         }
     }
     return result;
 }
-void WriteStudentGroupToFile(const string& filename, const vector<Student*>& students) {
-    ofstream file(filename); 
-
-    if (!file.is_open()) {
-        cerr << "Ошибка открытия файла: " << filename << endl;
-        return;
-    }
+//функция файла
+static void WriteStudentGroupToFile(const string& filename,
+    vector<Student*>& students,
+    vector<int>& indices) {
+    ofstream file(filename);
+    if (!file.is_open()) return;
 
     // Записываем заголовок
-    file << "Name\tAvg\tScholarship\n";
+    file << "Index\tName\tAvg\tScholarship\n";
 
-    // Записываем данные студентов
-    for (Student* student : students) {
-        if (student) { 
-            double avg = student->GetAvg();
-            long stp = student->Scholarship();
-            file << student->GetNameStudent() << "\t" << avg << "\t" << stp << "\n";
+    for (size_t i = 0; i < students.size(); ++i) {
+        if (students[i]) {
+            double avg = students[i]->GetAvgRounded();
+            long stp = students[i]->Scholarship();
+            file << indices[i] << "\t" << students[i]->GetNameStudent() << "\t" << fixed << setprecision(2) << avg << "\t" << stp << "\n";
         }
     }
-
     file.close();
-
 }
+
 //тело процедуры анализа студента класса University
-void University::ProcessStudent() {
-    vector<Student*> the_best = GetTheBest();
-    vector<Student*> good = GetGood();
-    vector<Student*> middle = GetMiddle();
-    vector<Student*> the_worst = GetTheWorst();
+void University::ProcessStudent(vector<int>& student_i) {
+    auto the_best = GetTheBest();
+    auto good = GetGood();
+    auto middle = GetMiddle();
+    auto the_worst = GetTheWorst();
 
+    vector<int> the_best_i, good_i, middle_i, the_worst_i;
 
+    auto fill_i = [&](const vector<Student*>& group, vector<int>& id) {
+        for (auto* st : group) {
+            for (size_t i = 0; i < students_.size(); ++i) {
+                if (&students_[i] == st) {
+                    id.push_back(student_i[i] + 1);
+                    break;
+                }
+            }
+        }
+        };
 
-    WriteStudentGroupToFile("TheBest.txt", the_best);
-    WriteStudentGroupToFile("good.txt", good);
-    WriteStudentGroupToFile("middle.txt", middle);
-    WriteStudentGroupToFile("TheWorst.txt", the_worst);
+    fill_i(the_best, the_best_i);
+    fill_i(good, good_i);
+    fill_i(middle, middle_i);
+    fill_i(the_worst, the_worst_i);
 
-
-
-
-
+    WriteStudentGroupToFile("TheBest.txt", the_best, the_best_i);
+    WriteStudentGroupToFile("good.txt", good, good_i);
+    WriteStudentGroupToFile("middle.txt", middle, middle_i);
+    WriteStudentGroupToFile("TheWorst.txt", the_worst, the_worst_i);
 }
+
 //основная функция Dll
 extern "C" __declspec(dllexport)
-int __stdcall GetBestStudent(
-    double* marks,
-    VARIANT names_var,
-    int rows,
-    int cols,
-    int* the_best_count
-) {
-    University university;
+int __stdcall GetBestStudent(double* marks,VARIANT names, int rows,int cols, int* the_best_count) {
 
-    if (!(names_var.vt & VT_ARRAY)) {
+    University u;
+    vector<int> student_i;
+
+    if (!(names.vt & VT_ARRAY)) {
         *the_best_count = 0;
         return -1;
     }
 
-
-    SAFEARRAY* psa = names_var.parray;
-    long l_bound, u_bound;
+    SAFEARRAY* psa = names.parray;
+    LONG l_bound, u_bound;
     SafeArrayGetLBound(psa, 1, &l_bound);
     SafeArrayGetUBound(psa, 1, &u_bound);
-    long cnt_names = u_bound - l_bound + 1;
+    LONG cnt_names = u_bound - l_bound + 1;
 
-    if (names_var.vt == (VT_ARRAY | VT_BSTR)) {
-        BSTR* p_bstr = nullptr;
-        SafeArrayAccessData(psa, reinterpret_cast<void**>(&p_bstr));
-        for (long i = 0; i < rows && i < cnt_names; ++i) {
-            _bstr_t bt(p_bstr[i]);
-            string sname = static_cast<const char*>(bt);
+    if (names.vt == (VT_ARRAY | VT_BSTR)) {
+        BSTR* bstr = nullptr;
+        SafeArrayAccessData(psa, reinterpret_cast<void**>(&bstr));
+        for (LONG i = 0; i < rows && i < cnt_names; ++i) {
+            _bstr_t bt(bstr[i]);
+            string sname = static_cast<char*>(bt);
             Student st(sname, &marks[i * cols], cols);
-            university.AddStudent(st);
+            u.AddStudent(st);
+            student_i.push_back(i);
         }
         SafeArrayUnaccessData(psa);
     }
-    else if (names_var.vt == (VT_ARRAY | VT_VARIANT)) {
+    else if (names.vt == (VT_ARRAY | VT_VARIANT)) {
         VARIANT* p_var = nullptr;
         SafeArrayAccessData(psa, reinterpret_cast<void**>(&p_var));
         for (LONG i = 0; i < rows && i < cnt_names; ++i) {
@@ -185,7 +202,8 @@ int __stdcall GetBestStudent(
                 _bstr_t bt(p_var[i].bstrVal);
                 string sname = static_cast<const char*>(bt);
                 Student st(sname, &marks[i * cols], cols);
-                university.AddStudent(st);
+                u.AddStudent(st);
+                student_i.push_back(i);
             }
         }
         SafeArrayUnaccessData(psa);
@@ -193,42 +211,44 @@ int __stdcall GetBestStudent(
     else {
         for (int i = 0; i < rows; ++i) {
             Student st(string(), &marks[i * cols], cols);
-            university.AddStudent(st);
+            u.AddStudent(st);
+            student_i.push_back(i);
         }
     }
 
-    auto best_grp = university.GetTheBest();
-    *the_best_count = static_cast<int>(best_grp.size());
+    u.ProcessStudent(student_i);
 
-    auto find_best = [&](const vector<Student*>& grp) {
-        long best_s = -1;
-        const Student* best_st = nullptr;
-        for (auto* st : grp) {
-            long sch = st->Scholarship();
-            if (sch > best_s) {
-                best_s = sch;
-                best_st = st;
-            }
-        }
-        if (!best_st) return -1;
-        const auto& all = university.GetStudents();
-        for (int i = 0; i < static_cast<int>(all.size()); ++i) {
-            if (&all[i] == best_st) return i;
-        }
-        return -1;
-        };
+    auto the_best_group = u.GetTheBest();
+    *the_best_count = static_cast<int>(the_best_group.size());
 
-    std::vector<std::vector<Student*>> groups = {
-        university.GetTheBest(),
-        university.GetGood(),
-        university.GetMiddle(),
-        university.GetTheWorst()
+    vector<vector<Student*>> groups = {
+        the_best_group,
+        u.GetGood(),
+        u.GetMiddle()
     };
 
-    for (auto& grp : groups) {
-        if (grp.empty()) continue;
-        int idx = find_best(grp);
-        if (idx != -1) return idx;
+    for (auto& group : groups) {
+        if (group.empty()) continue;
+
+        double max_avg = -1.0;
+        Student* best_student = nullptr;
+
+        for (auto* st : group) {
+            double current_avg = st->GetAvg();
+            if (current_avg > max_avg) {
+                max_avg = current_avg;
+                best_student = st;
+            }
+        }
+
+        if (best_student) {
+            vector<Student>& all_students = u.GetStudents();
+            for (size_t i = 0; i < all_students.size(); ++i) {
+                if (&all_students[i] == best_student) {
+                    return student_i[i];
+                }
+            }
+        }
     }
 
     return -1;
