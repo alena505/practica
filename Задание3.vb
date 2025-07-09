@@ -1,14 +1,12 @@
+Option Explicit
 'подключение к dll
 Declare PtrSafe Function GetBestStudent Lib "C:\Users\User\OneDrive\Desktop\Dll6\x64\Debug\Dll6.dll" _
     (ByRef marks As Double, _
      ByVal names_var As Variant, _
      ByVal rows As Long, _
      ByVal cols As Long, _
-     ByRef the_best_cnt As Long _
-    ) As Long
+     ByRef the_best_cnt As Long) As Long
 
-Const n_students As Long = 100
-Const n_subjects As Long = 6
 
 'основная процедура
 Sub mainSub()
@@ -17,7 +15,6 @@ Sub mainSub()
     MarksSub
     ShowResults
 End Sub
-
 
 'процедура заполнения предметов
 Sub SubjectsSub()
@@ -29,14 +26,12 @@ Sub SubjectsSub()
     arr(5) = "ОБЖ"
     arr(6) = "Физика"
     Dim j As Long
-    For j = 1 To n_subjects
+    For j = 1 To 6
         Cells(1, j + 1).Value = arr(j)
     Next j
 End Sub
-
 'процедура заполнения учеников из файла на гитхабе какого-то человека, которого нашла в интернете
 Function GetRussianNamesFromGitHub(cnt As Long) As Variant
-
     Dim http As Object: Set http = CreateObject("MSXML2.XMLHTTP")
     Dim url_names As String
     Dim url_surnames As String
@@ -59,180 +54,183 @@ Function GetRussianNamesFromGitHub(cnt As Long) As Variant
     Dim i As Long, ni As Long, si As Long
     Randomize
     For i = 1 To cnt
-        ni = Int(Rnd * UBound(name_arr))
-        si = Int(Rnd * UBound(surname_arr))
+        ni = Int(Rnd * (UBound(name_arr) - 1) + 1)
+        si = Int(Rnd * (UBound(surname_arr) - 1) + 1)
         result(i) = Trim(surname_arr(si)) & " " & Trim(name_arr(ni))
-        
     Next i
     GetRussianNamesFromGitHub = result
 End Function
-
 'процедура для заполнения ячеек в таблице студентами, использующая функцию получения данных из гита
 Sub StudentFromAPI()
-    
-    Dim list As Variant
-    list = GetRussianNamesFromGitHub(n_students)
-    
+    Dim list_names As Variant
+    list_names = GetRussianNamesFromGitHub(100)
     Dim i As Long
-    For i = 1 To n_students
-        Cells(i + 1, 1).Value = list(i)
+    For i = 1 To 100
+        Cells(i + 1, 1).Value = list_names(i)
     Next i
-
 End Sub
-    
-
 'процедура заполнения оценок с объектом Randomize(рнадомно выбираем оценки от 2 до 5)
 Sub MarksSub()
     Dim r As Long, c As Long
     Randomize
-    For r = 1 To n_students
-        For c = 1 To n_subjects
-        Cells(r + 1, c + 1).Value = Int(4 * Rnd + 2)
+    For r = 2 To 101
+        For c = 2 To 7
+            Cells(r, c).Value = Int(4 * Rnd + 2)
         Next c
     Next r
-    
 End Sub
-
 'процедура для показания резульатов dll функции
 Sub ShowResults()
-    Dim src As Worksheet
-    Set src = ThisWorkbook.Sheets("Лист1")
-    
+    Dim src As Worksheet: Set src = Worksheets("Лист1")
+    src.Range("H2:I" & src.rows.Count).ClearContents
+
+    Dim cnt_students As Long
+    cnt_students = src.Cells(src.rows.Count, "A").End(xlUp).row - 1
+    If cnt_students < 1 Then Exit Sub
+
     Dim rng As Variant
-    rng = src.Range("B2").Resize(n_students, n_subjects).Value
-    
-    Dim flat() As Double
-    ReDim flat(0 To n_students * n_subjects - 1)
-    
+    rng = src.Range("B2").Resize(cnt_students, 6).Value
+
+    Dim flat() As Double: ReDim flat(0 To cnt_students * 6 - 1)
     Dim r As Long, c As Long, k As Long
-    For r = 1 To n_students
-        For c = 1 To n_subjects
-            k = (r - 1) * n_subjects + (c - 1)
+    For r = 1 To cnt_students
+        For c = 1 To 6
+            k = (r - 1) * 6 + (c - 1)
             flat(k) = CDbl(rng(r, c))
         Next c
     Next r
 
     Dim names_arr As Variant
-    names_arr = Application.Transpose(src.Range("A2").Resize(n_students, 1).Value)
-    
+    names_arr = Application.Transpose(src.Range("A2").Resize(cnt_students, 1).Value)
+
     Dim best_idx As Long, best_cnt As Long
-    best_idx = GetBestStudent(flat(0), names_arr, n_students, n_subjects, best_cnt)
-    
+    best_idx = GetBestStudent(flat(0), names_arr, cnt_students, 6, best_cnt)
+
     Dim cnt_e As Long, cnt_g As Long, cnt_m As Long, cnt_b As Long
-    Dim sum_all As Long, best_list As String
-    Dim avg As Double, has_two As Boolean, scholarship As Long
+    Dim sum_all As Long, avg As Double, has_two As Boolean, stp As Long
+    Const SE As Long = 10000, SG As Long = 7000, SM As Long = 4000, SD As Long = 0
 
-    With src
-        .Cells(1, 8).Value = "Средний"
-        .Cells(1, 9).Value = "Стипендия"
-        Const sb = 10000, sg = 7000, sm = 4000, sd = 0
-        
-        For r = 1 To n_students
-            avg = 0: has_two = False
-            For c = 1 To n_subjects
-                If rng(r, c) = 2 Then has_two = True
-                avg = avg + rng(r, c)
-            Next c
-            avg = avg / n_subjects
+    src.Cells(1, 8).Value = "Средний балл"
+    src.Cells(1, 9).Value = "Стипендия"
 
-            If has_two Then
-                scholarship = sd
-                cnt_b = cnt_b + 1
-                .Cells(r + 1, 8).Value = "Не аттестован"
-             Else
-                .Cells(r + 1, 8).Value = Round(avg, 2)
-                Select Case True
-                    Case avg >= 4.5
-                        scholarship = 10000: cnt_e = cnt_e + 1
-                    Case avg >= 4#
-                        scholarship = 7000: cnt_g = cnt_g + 1
-                    Case Else
-                        stip = 4000: cnt_m = cnt_m + 1
-                End Select
-            End If
-            .Cells(r + 1, 9).Value = scholarship
-            sum_all = sum_all + scholarship
-        Next r
+    For r = 1 To cnt_students
+        avg = 0: has_two = False
+        For c = 1 To 6
+            If rng(r, c) = 2 Then has_two = True
+            avg = avg + rng(r, c)
+        Next c
+        avg = avg / 6
+        avg = Round(avg, 2)
 
-        If best_idx = -1 Then
-            .Cells(102, 1).Value = "Лучший: Нет отличников"
+        If has_two Then
+            stp = SD: cnt_b = cnt_b + 1
+            src.Cells(r + 1, 8).Value = avg
         Else
-            .Cells(102, 1).Value = "Лучший: " & .Cells(bestIdx + 2, 1).Value
-        End If
-        .Cells(103, 1).Value = "Отличников: " & bestCnt
-    End With
-
-    best_list = ""
-    If best_idx <> -1 Then
-        Dim best_avg As Double
-        best_avg = src.Cells(bestIdx + 2, 8).Value
-        For r = 1 To n_students
-            If src.Cells(r + 1, 8).Value = best_avg Then
-                best_list = best_list & src.Cells(r + 1, 1).Value & ", "
+            src.Cells(r + 1, 8).Value = avg
+            If avg >= 4.5 Then
+                stp = SE: cnt_e = cnt_e + 1
+            ElseIf avg >= 4 Then
+                stp = SG: cnt_g = cnt_g + 1
+            Else
+                stp = SM: cnt_m = cnt_m + 1
             End If
-        Next r
-        If Len(best_list) > 2 Then best_list = Left(best_list, Len(best_list) - 2)
-    Else
-        best_list = "Нет отличников"
-    End If
+        End If
+        src.Cells(r + 1, 9).Value = stp
+        sum_all = sum_all + stp
+    Next r
 
     Dim ws As Worksheet
-    On Error Resume Next
-      Set ws = ThisWorkbook.Sheets("Отчёт")
-      If ws Is Nothing Then
-        Set ws = ThisWorkbook.Sheets.Add(After:=Sheets(Sheets.Count))
+    On Error Resume Next: Set ws = Sheets("Отчёт"): On Error GoTo 0
+    If ws Is Nothing Then
+        Set ws = Sheets.Add(After:=Sheets(Sheets.Count))
         ws.Name = "Отчёт"
-      Else
+    Else
         ws.Cells.Clear
-      End If
-    On Error GoTo 0
+    End If
     
     With ws
          .Range("A1").Value = "Сводный отчёт по студентам"
-         .Range("A2").Value = "Лучшие студенты: " & best_list
+         
+         If best_idx < 0 Then
+            .Range("A2").Value = "Лучший студент: Нет данных"
+         Else
+            .Range("A2").Value = "Лучший студент: " & src.Cells(best_idx + 2, 1).Value
+         End If
+         
          .Range("A3").Value = "Количество отличников: " & cnt_e
          .Range("A4").Value = "Количество хорошистов: " & cnt_g
          .Range("A5").Value = "Количество троечников: " & cnt_m
          .Range("A6").Value = "Количество двоечников: " & cnt_b
-         .Range("A8").Value = "Общая сумма стипендий: " & summ_all & " руб"
-         .Columns("A").AutoFit
+         .Range("A8").Value = "Общая сумма стипендий: " & sum_all & " руб"
+         .Columns("A").WrapText = True
+         .rows.AutoFit
     End With
     
-    ImportReport "C:\1\TheBest.txt", "Отличники"
-    ImportReport "C:\1\good.txt", "Хорошисты"
-    ImportReport "C:\1\middle.txt", "Троечники"
-    ImportReport "C:\1\TheWorst.txt", "Двоечники"
+    CreateStudentSheet "Отличники", "TheBest.txt", src
+    CreateStudentSheet "Хорошисты", "good.txt", src
+    CreateStudentSheet "Троечники", "middle.txt", src
+    CreateStudentSheet "Двоечники", "TheWorst.txt", src
     
     ws.Activate
-    MsgBox "Отчёты готовы: Сводка на листе отчёт, группы на отдельных вкладках.", vbInformation
-    
+    MsgBox "Отчёты готовы!", vbInformation
 End Sub
-
-Sub ImportReport(filename As String, sheetName As String)
-    Application.DisplayAlerts = False
-    On Error Resume Next
-      Sheets(sheetName).Delete
-    On Error GoTo 0
-    Application.DisplayAlerts = True
-
+'процедура Отчёта
+Sub CreateStudentSheet(sheet_name As String, file_name As String, src As Worksheet)
     Dim ws As Worksheet
-    Set ws = Sheets.Add(After:=Sheets(Sheets.Count))
-    ws.Name = sheetName
-
-    With ws.QueryTables.Add(Connection:="TEXT;" & filename, Destination:=ws.Range("A1"))
-        .TextFileParseType = xlDelimited
-        .TextFileTabDelimiter = True
-        .TextFileDecimalSeparator = "."
-        .TextFileThousandsSeparator = ","
-        .Refresh BackgroundQuery:=False
-    End With
+    On Error Resume Next
+    Application.DisplayAlerts = False
+    Sheets(sheet_name).Delete
+    Application.DisplayAlerts = True
+    On Error GoTo 0
     
-    Dim last_row As Long, idx As Long, i As Long
-    last_row = ws.Cells(ws.rows.Count, 1).End(xlUp).Row
-    For i = 2 To lastRow - 3
-        If IsNumeric(ws.Cells(i, 1).Value) Then
-            idx = CLng(ws.Cells(i, 1).Value)
-            ws.Cells(i, 1).Value = src.Cells(idx + 2, 1).Value
+    Set ws = Sheets.Add(After:=Sheets(Sheets.Count))
+    ws.Name = sheet_name
+    
+    ws.Cells(1, 1).Value = "№"
+    ws.Cells(1, 2).Value = "ФИО"
+    ws.Cells(1, 3).Value = "Средний балл"
+    ws.Cells(1, 4).Value = "Стипендия"
+    
+    Dim fso As Object, ts As Object, line As String
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    If Not fso.FileExists(file_name) Then Exit Sub
+    Set ts = fso.OpenTextFile(file_name, 1, False)
+
+    If Not ts.AtEndOfStream Then line = ts.ReadLine
+    
+    Dim row As Long: row = 2
+    While Not ts.AtEndOfStream
+        line = ts.ReadLine
+        Dim parts As Variant
+        parts = Split(line, vbTab)
+        
+        If UBound(parts) >= 3 Then
+            Dim student_idx As Long
+            student_idx = CLng(parts(0)) + 1
+            
+            ws.Cells(row, 1).Value = student_idx
+            ws.Cells(row, 2).Value = src.Cells(student_idx, 1).Value
+            ws.Cells(row, 3).Value = parts(2)
+            ws.Cells(row, 4).Value = parts(3)
+            row = row + 1
         End If
-    Next i
+    Wend
+    
+    ts.Close
+    
+    With ws
+        .Columns("A:D").AutoFit
+        .Columns("B").WrapText = True
+        .rows.AutoFit
+    End With
 End Sub
+
+
+
+
+
+
+
+
+
