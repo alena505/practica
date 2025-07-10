@@ -1,21 +1,14 @@
-﻿#include "WorkshopMaster.h"
-#include <vector>
+#include "WorkshopMaster.h"
+#include "PartBatch.h"
+#pragma once
 
-using namespace std;
 
-WorkshopMaster::WorkshopMaster(string name): name_master_(name){}
-//Деструктор
-WorkshopMaster::~WorkshopMaster() {
-	for (auto* detail:details_) {
-		delete detail;
-	}
-}
-//Функция добавления деталей
-void WorkshopMaster::AddDetails(PartBatch* details) {
-	details_.push_back(details);
-}
-//Функция для получения приватного имени
-string WorkshopMaster::GetName() const {
-	return name_master_;
-}
-
+class ProductionDepartment {
+private:
+	vector<WorkshopMaster*> name_master_;
+public:
+	vector<WorkshopMaster*> AnalyzeMasters();
+	double CalculateGeneralBrak();
+	void AddMaster(WorkshopMaster* master);
+	void Svodka(int& summ_details, int& summ_defect_details, double& summ_avg_deffect_procent);
+};
