@@ -1,0 +1,126 @@
+#include <Windows.h>
+#include "ProductionDepartment.h"
+#include <iostream>
+#include <fstream>
+#include <comutil.h>
+#include <map>
+#include <set>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+//структура входных данных
+struct Batch {
+	int data;
+	int brak;
+	int type;
+	char* name;
+};
+
+
+//Функция dll
+extern "C" __declspec(dllexport)
+int __stdcall AnalyzeProduction(Batch* parts, int n) {
+
+	vector<PartBatch*> batch;
+	set<string> workers;
+	map<string, WorkshopMaster*> wm;
+
+	try {
+		int ta = 0;
+		int tb = 0;
+		int j = 1;
+		//сбор уникальных имён раоботников
+		while (j <= n) {
+			workers.insert(string(parts[j].name));
+			j++;
+		}
+		//создание мастеров
+		for (auto it = workers.begin(); it != workers.end(); ++it) {
+			wm[*it] = new WorkshopMaster(*it);
+		}
+		//обработка партий деталей
+		for (int i = 1; i <= n; i++) {
+
+			PartBatch* p;
+			string key = string(parts[i].name);
+
+			ta += parts[i].data;
+			tb += parts[i].brak;
+
+			if (parts[i].type == 1) {
+				p = new StandardPartBatch(parts[i].data, parts[i].brak);
+			}
+			else {
+				p = new CriticalPartBatch(parts[i].data, parts[i].brak);
+			}
+
+			wm[key]->AddDetails(p);
+			batch.push_back(p);
+
+		}
+		//анализ производства
+		ProductionDepartment depart;
+
+		for (auto it = wm.begin(); it != wm.end(); ++it) {
+			depart.AddMaster(it->second);
+		}
+
+		auto bad = depart.AnalyzeMasters();
+		//открытие файла с мастерами, сделавшими брак
+		ofstream bad_file("OverDefected.txt");
+
+		for (auto it = bad.begin(); it != bad.end(); ++it) {
+			bad_file << (*it)->GetName() << endl;
+		}
+
+		bad_file.close();
+		double fines = 0;
+		//расчёт штрафа
+		for (int i = 0; i < batch.size(); i++) {
+			fines += batch[i]->CalculateFine();
+		}
+		//открытие файла с данными о деталях
+		ofstream ps("ProductionSummary.txt");
+		int sd = 0;
+		int sdd = 0;
+		double bd = 0.0;
+
+		//вызов метода общей сводки(искомых данных о деталях)
+		depart.Svodka(sd, sdd, bd);
+		ps << sd << endl << sdd << endl << bd << endl;
+
+		ps.close();
+
+		//освобождение памяти
+		for (auto ptr : batch) {
+			delete ptr;
+		}
+		batch.clear();
+
+		for (auto& pair : wm) {
+			delete pair.second;
+		}
+		wm.clear();
+
+		return bad.size();
+	}
+	catch (...) {
+		//освобождение памяти при исключении
+		for (auto ptr : batch) {
+			delete ptr;
+		}
+		batch.clear();
+
+		for (auto& pair : wm) {
+			delete pair.second;
+		}
+		wm.clear();
+
+		return -1; //код ошибки
+	}
+
+}
+
+

@@ -1,0 +1,35 @@
+#include "WorkshopMaster.h"
+#include <vector>
+
+using namespace std;
+
+WorkshopMaster::WorkshopMaster(string name) : name_master_(name) {}
+//Деструктор
+WorkshopMaster::~WorkshopMaster() {
+
+	if (GetDetails().empty()) {
+		return;
+	}
+	else {
+		for (auto* detail : GetDetails()) {
+			delete detail;
+		}
+	}
+
+	details_.clear();
+
+
+}
+//Функция добавления деталей
+void WorkshopMaster::AddDetails(PartBatch* details) {
+	details_.push_back(details);
+}
+//Функция для получения приватного имени
+string WorkshopMaster::GetName() const {
+	return name_master_;
+}
+
+const vector <PartBatch*>& WorkshopMaster::GetDetails() {
+	return details_;
+}
+
