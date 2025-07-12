@@ -1,0 +1,301 @@
+#include <Windows.h>
+#include "Class.h" //подключение заголовочного файла, где объявлены классы Student и University
+#include <string> //подключение объекта строк
+#include <fstream> //подключение файлов
+#include <iostream>
+#include <vector> //подключение контейнера vector
+#include <iomanip>
+#include <comutil.h>
+#include <cmath>
+
+using namespace std;
+//тело конструктора класса Student
+Student::Student(string name, double* marks, int count)
+    : name_(name), marks_(marks, marks + count) {}
+
+//тело функции среднего балла класса Student
+double Student::GetAvg() {
+    if (marks_.empty()) return 0.0;
+    double sum = 0.0;
+    for (double mark : marks_) {
+        sum += mark;
+    }
+    return sum / marks_.size();
+}
+
+//тело функции округления среднего балла
+double Student::GetAvgRounded() {
+    double avg = GetAvg();
+    return round(avg * 100.0) / 100.0;
+}
+
+//тело функции индекса студента класса Student
+string Student::GetNameStudent() {
+    return name_;
+}
+
+//тело функции наличия двойки у студента класса Student
+bool Student::GetTwo() {
+    for (double mark : marks_) {
+        if (mark == 2.0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//тело функции стипендии
+long Student::Scholarship() {
+    if (GetTwo()) {
+        return 0;
+    }
+    double avg = GetAvgRounded();
+    if (avg >= 4.5) {
+        return 10000;
+    }
+    else if (avg >= 4.0) {
+        return 7000;
+    }
+    else {
+        return 4000;
+    }
+}
+
+//тело процедуры добавления студента класса University
+void University::AddStudent(Student& student) {
+    students_.push_back(student);
+}
+//Геттер для списка студентов
+vector<Student>& University::GetStudents() {
+    return students_;
+}
+//метод разбивки студентов по категориям 
+vector<Student*> University::GetCategory(StudentCategory category) {
+    vector<Student*> result;
+    for (Student& student : students_) {
+        bool hasTwo = student.GetTwo();
+        double avg = student.GetAvgRounded();
+
+        switch (category) {
+        case StudentCategory::TheBest:
+            if (!hasTwo && avg >= 4.5)
+                result.push_back(&student);
+            break;
+        case StudentCategory::Good:
+            if (!hasTwo && avg >= 4.0 && avg < 4.5)
+                result.push_back(&student);
+            break;
+        case StudentCategory::Middle:
+            if (!hasTwo && avg < 4.0)
+                result.push_back(&student);
+            break;
+        case StudentCategory::TheWorst:
+            if (hasTwo)
+                result.push_back(&student);
+            break;
+        }
+    }
+    return result;
+}
+
+////тело метода для лучшего студента
+//vector<Student*> University::GetTheBest() {
+//    vector<Student*> result;
+//    for (Student& student : students_) {
+//        if (!student.GetTwo() && student.GetAvgRounded() >= 4.5) {
+//            result.push_back(&student);
+//        }
+//    }
+//    return result;
+//}
+//
+////тело метода для хорошего студента
+//vector<Student*> University::GetGood() {
+//    vector<Student*> result;
+//    for (Student& student : students_) {
+//        if (!student.GetTwo() && student.GetAvgRounded() >= 4.0 && student.GetAvgRounded() < 4.5) {
+//            result.push_back(&student);
+//        }
+//    }
+//    return result;
+//}
+//
+////тело метода для среднего студента
+//vector<Student*> University::GetMiddle() {
+//    vector<Student*> result;
+//    for (Student& student : students_) {
+//        if (!student.GetTwo() && student.GetAvgRounded() < 4.0) {
+//            result.push_back(&student);
+//        }
+//    }
+//    return result;
+//}
+//
+////тело метода для худшего студента
+//vector<Student*> University::GetTheWorst() {
+//    vector<Student*> result;
+//    for (Student& student : students_) {
+//        if (student.GetTwo()) {
+//            result.push_back(&student);
+//        }
+//    }
+//    return result;
+//}
+
+//vector<Student*> University::GetTheBest() {
+//    return GetCategory(StudentCategory::TheBest);
+//}
+//
+//vector<Student*> University::GetGood() {
+//    return GetCategory(StudentCategory::Good);
+//}
+//
+//vector<Student*> University::GetMiddle() {
+//    return GetCategory(StudentCategory::Middle);
+//}
+//
+//vector<Student*> University::GetTheWorst() {
+//    return GetCategory(StudentCategory::TheWorst);
+//}
+
+//функция файла
+static void WriteStudentGroupToFile(const string& filename,
+    vector<Student*>& students,
+    vector<int>& indices) {
+    ofstream file(filename);
+    if (!file.is_open()) return;
+
+    // Записываем заголовок
+    file << "Index\tName\tAvg\tScholarship\n";
+
+    for (size_t i = 0; i < students.size(); ++i) {
+        if (students[i]) {
+            double avg = students[i]->GetAvgRounded();
+            long stp = students[i]->Scholarship();
+            file << indices[i] << "\t" << students[i]->GetNameStudent() << "\t" << fixed << setprecision(2) << avg << "\t" << stp << "\n";
+        }
+    }
+    file.close();
+}
+
+//тело процедуры анализа студента класса University
+void University::ProcessStudent(vector<int>& student_i) {
+    vector<pair<StudentCategory, string>> categories = {
+        {StudentCategory::TheBest, "TheBest.txt"},
+        {StudentCategory::Good,    "good.txt"},
+        {StudentCategory::Middle,  "middle.txt"},
+        {StudentCategory::TheWorst,"TheWorst.txt"}
+    };
+
+    for (const auto& [category, filename] : categories) {
+        auto group = GetCategory(category);
+        vector<int> indices;
+
+        for (Student* st : group) {
+            for (size_t i = 0; i < students_.size(); ++i) {
+                if (&students_[i] == st) {
+                    indices.push_back(student_i[i] + 1);
+                    break;
+                }
+            }
+        }
+        WriteStudentGroupToFile(filename, group, indices);
+    }
+}
+
+//основная функция Dll
+extern "C" __declspec(dllexport)
+int __stdcall GetBestStudent(double* marks,VARIANT names, int rows,int cols, int* the_best_count) {
+
+    University u;
+    vector<int> student_i;
+
+    if (!(names.vt & VT_ARRAY)) {
+        *the_best_count = 0;
+        return -1;
+    }
+
+    SAFEARRAY* psa = names.parray;
+    LONG l_bound, u_bound;
+    SafeArrayGetLBound(psa, 1, &l_bound);
+    SafeArrayGetUBound(psa, 1, &u_bound);
+    LONG cnt_names = u_bound - l_bound + 1;
+
+    if (names.vt == (VT_ARRAY | VT_BSTR)) {
+        BSTR* bstr = nullptr;
+        SafeArrayAccessData(psa, reinterpret_cast<void**>(&bstr));
+        for (LONG i = 0; i < rows && i < cnt_names; ++i) {
+            _bstr_t bt(bstr[i]);
+            string sname = static_cast<char*>(bt);
+            Student st(sname, &marks[i * cols], cols);
+            u.AddStudent(st);
+            student_i.push_back(i);
+        }
+        SafeArrayUnaccessData(psa);
+    }
+    else if (names.vt == (VT_ARRAY | VT_VARIANT)) {
+        VARIANT* p_var = nullptr;
+        SafeArrayAccessData(psa, reinterpret_cast<void**>(&p_var));
+        for (LONG i = 0; i < rows && i < cnt_names; ++i) {
+            if (p_var[i].vt == VT_BSTR) {
+                _bstr_t bt(p_var[i].bstrVal);
+                string sname = static_cast<const char*>(bt);
+                Student st(sname, &marks[i * cols], cols);
+                u.AddStudent(st);
+                student_i.push_back(i);
+            }
+        }
+        SafeArrayUnaccessData(psa);
+    }
+    else {
+        for (int i = 0; i < rows; ++i) {
+            Student st(string(), &marks[i * cols], cols);
+            u.AddStudent(st);
+            student_i.push_back(i);
+        }
+    }
+
+    u.ProcessStudent(student_i);
+
+    const vector<StudentCategory> searchCategories = {
+    StudentCategory::TheBest,
+    StudentCategory::Good,
+    StudentCategory::Middle
+    };
+
+
+    auto the_best_group = u.GetCategory(StudentCategory::TheBest);
+    *the_best_count = static_cast<int>(the_best_group.size());
+
+    vector<vector<Student*>> groups = {
+        the_best_group,
+        u.GetCategory(StudentCategory::Good),    
+        u.GetCategory(StudentCategory::Middle)  
+    };
+
+    for (auto& group : groups) {
+        if (group.empty()) continue;
+
+        double max_avg = -1.0;
+        Student* best_student = nullptr;
+
+        for (auto* st : group) {
+            double current_avg = st->GetAvg();
+            if (current_avg > max_avg) {
+                max_avg = current_avg;
+                best_student = st;
+            }
+        }
+
+        if (best_student) {
+            vector<Student>& all_students = u.GetStudents();
+            for (size_t i = 0; i < all_students.size(); ++i) {
+                if (&all_students[i] == best_student) {
+                    return student_i[i];
+                }
+            }
+        }
+    }
+
+    return -1;
+}
