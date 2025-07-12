@@ -23,7 +23,7 @@ Sub main()
     Call DetailsFromAPI
     Call MastersFromApi
     Call AddData
-    'Call Analyze
+    Call Analyze
 End Sub
 
 'Процедура добавление наименования полей(строк)
